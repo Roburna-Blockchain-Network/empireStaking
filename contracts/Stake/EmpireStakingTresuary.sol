@@ -9,13 +9,13 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract EmpireStakingTresuary is Ownable, IEmpireStakingTresuary{
-    
+    using SafeMath for uint256;
 
     mapping(address => uint256) balance;
     address public stakingContract;
     address public deployer;
     uint256 public totalBalance;
-    uint256 numTokenReflectionsToDistribute;
+    uint256 numTokenReflectionsToDistribute = 1000 * 10**9;
     address public reflectionsDistributorAddress;
     
 
@@ -46,19 +46,22 @@ contract EmpireStakingTresuary is Ownable, IEmpireStakingTresuary{
 
     function deposit(address staker, uint256 amount) external onlyOwner{
         require(empireToken.allowance(staker, address(this)) >= amount, "Insufficient allowance.");
-        balance[staker] += amount;
-        totalBalance += amount;
+        
 
         uint256 contractBalance = getTotalBalance();
         uint256 contractBalanceWReflections = empireToken.balanceOf(address(this));
+        uint256 reflections = contractBalanceWReflections.sub(contractBalance);
 
         /** 
          * @notice Transfers accumulated reflections to the reflectionsDistributor 
          * if the amount is reached
          */
-        if(contractBalanceWReflections - contractBalance >= numTokenReflectionsToDistribute){
-           empireToken.transfer(reflectionsDistributorAddress, numTokenReflectionsToDistribute);
+        if(contractBalanceWReflections > 0 && reflections > numTokenReflectionsToDistribute){
+             empireToken.transfer(reflectionsDistributorAddress, reflections);
         }
+        
+        balance[staker] += amount;
+        totalBalance += amount;
 
         reflectionsDistributor.deposit(staker, amount);
         empireToken.transferFrom(staker, address(this), amount);

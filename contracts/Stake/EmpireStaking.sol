@@ -118,7 +118,7 @@ contract EmpireStaking is Ownable {
         rewardWallet = _rewardWallet;
     }
 
-    function getRewardrate() external view returns(uint256){
+    function getRewardRate() external view returns(uint256){
         return rewardRate;
     }
 
